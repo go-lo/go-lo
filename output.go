@@ -20,7 +20,7 @@ type Output struct {
 	Size       int64         `json:"size"`
 	Timestamp  time.Time     `json:"timestamp"`
 	Duration   time.Duration `json:"duration"`
-	Error      error         `json:"error"`
+	Error      interface{}   `json:"error"`
 }
 
 // Parse takes a sequence ID, duration, and an http.Response
