@@ -55,7 +55,9 @@ func DoRequest(id string, req *http.Request) (response *http.Response) {
 		o.Error = err
 	}
 
-	fmt.Println(o.String())
+	// Let this happen out of band- we've already done the
+	// difficult stuff
+	go fmt.Println(o.String())
 
 	return
 }
