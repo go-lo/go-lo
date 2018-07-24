@@ -36,7 +36,7 @@ func DoRequest(id string, req *http.Request) (response *http.Response) {
 	response, err := Client.Do(req)
 	end := time.Now()
 
-	o := Parse(id, end.Sub(start), response)
+	o := Parse(id, end.Sub(start), req, response)
 
 	if err != nil {
 		o.Error = err

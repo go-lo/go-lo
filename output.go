@@ -27,21 +27,18 @@ type Output struct {
 // and pulls out the necessary data an Output type wants
 // The sequence ID is useful to be able to group requests
 // in a journey together
-func Parse(id string, duration time.Duration, r *http.Response) (o Output) {
+func Parse(id string, duration time.Duration, r *http.Request, resp *http.Response) (o Output) {
 	o = Output{
 		SequenceID: id,
 		Timestamp:  time.Now(),
 		Duration:   duration,
+		URL:        r.URL.String(),
+		Method:     r.Method,
 	}
 
-	if r != nil {
-		o.Status = r.StatusCode
-		o.Size = r.ContentLength
-
-		if r.Request != nil {
-			o.URL = r.Request.URL.String()
-			o.Method = r.Request.Method
-		}
+	if resp != nil {
+		o.Status = resp.StatusCode
+		o.Size = resp.ContentLength
 	}
 
 	return
