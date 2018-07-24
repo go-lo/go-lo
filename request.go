@@ -13,6 +13,14 @@ var (
 	// is warranted, such as with authorization, or
 	// overriding TLS configuration
 	Client = &http.Client{}
+
+	// CloseRequests will ensure all requests are closed
+	// as early as possible, as if Keep Alive is disabled.
+	// This defaults to true to:
+	//  1. Ensure connections don't hang around slupring resources, and
+	//  2. Because keep alive isn't necessarily a great way to prove the
+	//     performance of an endpoint
+	CloseRequests = true
 )
 
 const (
@@ -32,6 +40,10 @@ const (
 // writer of a schedule, this function removes that boilerplate by
 // doing it it's self.
 func DoRequest(id string, req *http.Request) (response *http.Response) {
+	if CloseRequests {
+		req.Close = true
+	}
+
 	start := time.Now()
 	response, err := Client.Do(req)
 	end := time.Now()
