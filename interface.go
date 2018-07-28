@@ -42,16 +42,22 @@ func (s Server) Run(_ *NullArg, _ *NullArg) error {
 
 // StartListener will start an RPC server on loadtest.RPCAddr
 // and register Server ahead of Agents scheduling jobs
-func StartListener(server Server) error {
-	s := rpc.NewServer()
-	s.Register(&server)
-
-	l, err := net.Listen("tcp", RPCAddr)
+func StartListener(server Server) (err error) {
+	s, l, err := setupListener(server)
 	if err != nil {
-		return err
+		return
 	}
 
 	s.Accept(l)
 
 	return fmt.Errorf("Server has gone away")
+}
+
+func setupListener(server Server) (s *rpc.Server, l net.Listener, err error) {
+	s = rpc.NewServer()
+	s.Register(&server)
+
+	l, err = net.Listen("tcp", RPCAddr)
+
+	return
 }
