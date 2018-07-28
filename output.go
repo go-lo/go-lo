@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+var (
+	c clock
+)
+
 // Output is a normalised, enriched struct containing
 // results for a response which can be printed and picked
 // up by a loadtest agent.
@@ -30,7 +34,7 @@ type Output struct {
 func Parse(id string, duration time.Duration, r *http.Request, resp *http.Response) (o Output) {
 	o = Output{
 		SequenceID: id,
-		Timestamp:  time.Now(),
+		Timestamp:  c.now(),
 		Duration:   duration,
 		URL:        r.URL.String(),
 		Method:     r.Method,
