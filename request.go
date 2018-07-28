@@ -46,8 +46,11 @@ func DoRequest(id string, req *http.Request) (response *http.Response) {
 
 	start := time.Now()
 	response, err := Client.Do(req)
-	defer response.Body.Close()
 	end := time.Now()
+
+	if err == nil {
+		defer response.Body.Close()
+	}
 
 	o := Parse(id, end.Sub(start), req, response)
 
