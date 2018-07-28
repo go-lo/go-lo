@@ -83,10 +83,11 @@ This will take our implementation of the interface loadtest.Runner and start up 
 * [Variables](#pkg-variables)
 * [func DoRequest(id string, req *http.Request) (response *http.Response)](#DoRequest)
 * [func NewSequenceID() string](#NewSequenceID)
-* [func StartListener(server Server) error](#StartListener)
+* [func StartListener(server Server) (err error)](#StartListener)
+* [type HTTPClient](#HTTPClient)
 * [type NullArg](#NullArg)
 * [type Output](#Output)
-  * [func Parse(id string, duration time.Duration, r *http.Response) (o Output)](#Parse)
+  * [func Parse(id string, duration time.Duration, r *http.Request, resp *http.Response) (o Output)](#Parse)
   * [func (o Output) String() string](#Output.String)
 * [type Runner](#Runner)
 * [type Server](#Server)
@@ -95,7 +96,7 @@ This will take our implementation of the interface loadtest.Runner and start up 
 
 
 #### <a name="pkg-files">Package files</a>
-[doc.go](/src/github.com/jspc/loadtest/doc.go) [interface.go](/src/github.com/jspc/loadtest/interface.go) [output.go](/src/github.com/jspc/loadtest/output.go) [request.go](/src/github.com/jspc/loadtest/request.go) 
+[clock.go](/src/github.com/jspc/loadtest/clock.go) [doc.go](/src/github.com/jspc/loadtest/doc.go) [interface.go](/src/github.com/jspc/loadtest/interface.go) [output.go](/src/github.com/jspc/loadtest/output.go) [request.go](/src/github.com/jspc/loadtest/request.go) 
 
 
 ## <a name="pkg-constants">Constants</a>
@@ -113,20 +114,12 @@ const (
 ## <a name="pkg-variables">Variables</a>
 ``` go
 var (
-    // Client can be overridden for when extra control
-    // is warranted, such as with authorization, or
-    // overriding TLS configuration
-    Client = &http.Client{}
-)
-```
-``` go
-var (
     RPCAddr = "127.0.0.1:9999"
 )
 ```
 
 
-## <a name="DoRequest">func</a> [DoRequest](/src/target/request.go?s=1048:1118#L34)
+## <a name="DoRequest">func</a> [DoRequest](/src/target/request.go?s=1674:1744#L50)
 ``` go
 func DoRequest(id string, req *http.Request) (response *http.Response)
 ```
@@ -140,7 +133,7 @@ doing it it's self.
 
 
 
-## <a name="NewSequenceID">func</a> [NewSequenceID](/src/target/request.go?s=1627:1654#L55)
+## <a name="NewSequenceID">func</a> [NewSequenceID](/src/target/request.go?s=2475:2502#L85)
 ``` go
 func NewSequenceID() string
 ```
@@ -152,12 +145,50 @@ Thus: a usable ID can always be guaranteed from this function
 
 
 
-## <a name="StartListener">func</a> [StartListener](/src/target/interface.go?s=927:966#L45)
+## <a name="StartListener">func</a> [StartListener](/src/target/interface.go?s=927:972#L45)
 ``` go
-func StartListener(server Server) error
+func StartListener(server Server) (err error)
 ```
 StartListener will start an RPC server on loadtest.RPCAddr
 and register Server ahead of Agents scheduling jobs
+
+
+
+
+## <a name="HTTPClient">type</a> [HTTPClient](/src/target/request.go?s=251:380#L14)
+``` go
+type HTTPClient interface {
+    // Do tracks https://golang.org/pkg/net/http/#Client.Do
+    Do(*http.Request) (*http.Response, error)
+}
+```
+HTTPClient is an interface which exposes a simple
+way of doing http calls. It can be overwritten for
+Oauth, or other auth, or even to stub calls out in
+testing
+
+
+``` go
+var (
+    // Client can be overridden for when extra control
+    // is warranted, such as with authorization, or
+    // overriding TLS configuration
+    Client HTTPClient
+
+    // CloseRequests will ensure all requests are closed
+    // as early as possible, as if Keep Alive is disabled.
+    // This defaults to true to:
+    //  1. Ensure connections don't hang around slupring resources, and
+    //  2. Because keep alive isn't necessarily a great way to prove the
+    //     performance of an endpoint
+    CloseRequests = true
+)
+```
+
+
+
+
+
 
 
 
@@ -178,7 +209,7 @@ but that can be put into rpc calls to aid readability
 
 
 
-## <a name="Output">type</a> [Output](/src/target/output.go?s=324:685#L15)
+## <a name="Output">type</a> [Output](/src/target/output.go?s=342:703#L19)
 ``` go
 type Output struct {
     SequenceID string        `json:"sequenceID"`
@@ -188,7 +219,7 @@ type Output struct {
     Size       int64         `json:"size"`
     Timestamp  time.Time     `json:"timestamp"`
     Duration   time.Duration `json:"duration"`
-    Error      error         `json:"error"`
+    Error      interface{}   `json:"error"`
 }
 ```
 Output is a normalised, enriched struct containing
@@ -204,9 +235,9 @@ off the back of it to remove boilerplate in schedule code
 
 
 
-### <a name="Parse">func</a> [Parse](/src/target/output.go?s=888:962#L30)
+### <a name="Parse">func</a> [Parse](/src/target/output.go?s=906:1000#L34)
 ``` go
-func Parse(id string, duration time.Duration, r *http.Response) (o Output)
+func Parse(id string, duration time.Duration, r *http.Request, resp *http.Response) (o Output)
 ```
 Parse takes a sequence ID, duration, and an http.Response
 and pulls out the necessary data an Output type wants
@@ -217,7 +248,7 @@ in a journey together
 
 
 
-### <a name="Output.String">func</a> (Output) [String](/src/target/output.go?s=1317:1348#L52)
+### <a name="Output.String">func</a> (Output) [String](/src/target/output.go?s=1321:1352#L53)
 ``` go
 func (o Output) String() string
 ```
