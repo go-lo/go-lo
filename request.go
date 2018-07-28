@@ -3,16 +3,24 @@ package loadtest
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/satori/go.uuid"
 )
+
+// HTTPClient is an interface which exposes a simple
+// way of doing http calls. It can be overwritten for
+// Oauth, or other auth, or even to stub calls out in
+// testing
+type HTTPClient interface {
+	// Do tracks https://golang.org/pkg/net/http/#Client.Do
+	Do(*http.Request) (*http.Response, error)
+}
 
 var (
 	// Client can be overridden for when extra control
 	// is warranted, such as with authorization, or
 	// overriding TLS configuration
-	Client = &http.Client{}
+	Client HTTPClient
 
 	// CloseRequests will ensure all requests are closed
 	// as early as possible, as if Keep Alive is disabled.
@@ -40,13 +48,17 @@ const (
 // writer of a schedule, this function removes that boilerplate by
 // doing it it's self.
 func DoRequest(id string, req *http.Request) (response *http.Response) {
+	if Client == nil {
+		Client = &http.Client{}
+	}
+
 	if CloseRequests {
 		req.Close = true
 	}
 
-	start := time.Now()
+	start := c.now()
 	response, err := Client.Do(req)
-	end := time.Now()
+	end := c.now()
 
 	if err == nil {
 		defer response.Body.Close()
