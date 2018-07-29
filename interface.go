@@ -6,7 +6,9 @@ import (
 	"net/rpc"
 )
 
-var (
+const (
+	// RPCAddr is the default host on which a schedule listens
+	// and an agent connects to
 	RPCAddr = "127.0.0.1:9999"
 )
 
