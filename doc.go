@@ -1,5 +1,5 @@
 /*
-package golo is a framework for running distributed loadtesting with go.
+Package golo is a framework for running distributed loadtesting with go.
 
 It consists of multiple agents which receive jobs from a scheduler, and send results to a collector.
 
