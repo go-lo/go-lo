@@ -1,5 +1,5 @@
 /*
-loadtest is a framework for running distributed loadtesting with go.
+package golo is a framework for running distributed loadtesting with go.
 
 It consists of multiple agents which receive jobs from a scheduler, and send results to a collector.
 
@@ -65,4 +65,4 @@ This executes *http.Request `req` with a sequence ID. This returns an *http.Resp
 This will take our implementation of the interface loadtest.Runner and start up the RPC listener
 
 */
-package loadtest
+package golo

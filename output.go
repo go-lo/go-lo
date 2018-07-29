@@ -1,4 +1,4 @@
-package loadtest
+package golo
 
 import (
 	"encoding/json"

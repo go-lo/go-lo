@@ -1,14 +1,14 @@
 
 
-# loadtest
-`import "github.com/jspc/loadtest"`
+# golo
+`import "github.com/go-lo/go-lo"`
 
 * [Overview](#pkg-overview)
 * [Index](#pkg-index)
 * [Subdirectories](#pkg-subdirectories)
 
 ## <a name="pkg-overview">Overview</a>
-loadtest is a framework for running distributed loadtesting with go.
+package golo is a framework for running distributed loadtesting with go.
 
 It consists of multiple agents which receive jobs from a scheduler, and send results to a collector.
 
@@ -96,7 +96,7 @@ This will take our implementation of the interface loadtest.Runner and start up 
 
 
 #### <a name="pkg-files">Package files</a>
-[clock.go](/src/github.com/jspc/loadtest/clock.go) [doc.go](/src/github.com/jspc/loadtest/doc.go) [interface.go](/src/github.com/jspc/loadtest/interface.go) [output.go](/src/github.com/jspc/loadtest/output.go) [request.go](/src/github.com/jspc/loadtest/request.go) 
+[clock.go](/src/github.com/go-lo/go-lo/clock.go) [doc.go](/src/github.com/go-lo/go-lo/doc.go) [interface.go](/src/github.com/go-lo/go-lo/interface.go) [output.go](/src/github.com/go-lo/go-lo/output.go) [request.go](/src/github.com/go-lo/go-lo/request.go) 
 
 
 ## <a name="pkg-constants">Constants</a>
@@ -119,7 +119,7 @@ var (
 ```
 
 
-## <a name="DoRequest">func</a> [DoRequest](/src/target/request.go?s=1674:1744#L50)
+## <a name="DoRequest">func</a> [DoRequest](/src/target/request.go?s=1670:1740#L40)
 ``` go
 func DoRequest(id string, req *http.Request) (response *http.Response)
 ```
@@ -133,7 +133,7 @@ doing it it's self.
 
 
 
-## <a name="NewSequenceID">func</a> [NewSequenceID](/src/target/request.go?s=2475:2502#L85)
+## <a name="NewSequenceID">func</a> [NewSequenceID](/src/target/request.go?s=2471:2498#L75)
 ``` go
 func NewSequenceID() string
 ```
@@ -145,7 +145,7 @@ Thus: a usable ID can always be guaranteed from this function
 
 
 
-## <a name="StartListener">func</a> [StartListener](/src/target/interface.go?s=927:972#L45)
+## <a name="StartListener">func</a> [StartListener](/src/target/interface.go?s=923:968#L35)
 ``` go
 func StartListener(server Server) (err error)
 ```
@@ -155,7 +155,7 @@ and register Server ahead of Agents scheduling jobs
 
 
 
-## <a name="HTTPClient">type</a> [HTTPClient](/src/target/request.go?s=251:380#L14)
+## <a name="HTTPClient">type</a> [HTTPClient](/src/target/request.go?s=247:376#L4)
 ``` go
 type HTTPClient interface {
     // Do tracks https://golang.org/pkg/net/http/#Client.Do
@@ -193,7 +193,7 @@ var (
 
 
 
-## <a name="NullArg">type</a> [NullArg](/src/target/interface.go?s=200:221#L15)
+## <a name="NullArg">type</a> [NullArg](/src/target/interface.go?s=196:217#L5)
 ``` go
 type NullArg struct{}
 ```
@@ -209,7 +209,7 @@ but that can be put into rpc calls to aid readability
 
 
 
-## <a name="Output">type</a> [Output](/src/target/output.go?s=342:703#L19)
+## <a name="Output">type</a> [Output](/src/target/output.go?s=338:699#L9)
 ``` go
 type Output struct {
     SequenceID string        `json:"sequenceID"`
@@ -235,7 +235,7 @@ off the back of it to remove boilerplate in schedule code
 
 
 
-### <a name="Parse">func</a> [Parse](/src/target/output.go?s=906:1000#L34)
+### <a name="Parse">func</a> [Parse](/src/target/output.go?s=902:996#L24)
 ``` go
 func Parse(id string, duration time.Duration, r *http.Request, resp *http.Response) (o Output)
 ```
@@ -248,7 +248,7 @@ in a journey together
 
 
 
-### <a name="Output.String">func</a> (Output) [String](/src/target/output.go?s=1321:1352#L53)
+### <a name="Output.String">func</a> (Output) [String](/src/target/output.go?s=1317:1348#L43)
 ``` go
 func (o Output) String() string
 ```
@@ -258,7 +258,7 @@ Output. It swallows errors.
 
 
 
-## <a name="Runner">type</a> [Runner](/src/target/interface.go?s=372:404#L20)
+## <a name="Runner">type</a> [Runner](/src/target/interface.go?s=368:400#L10)
 ``` go
 type Runner interface {
     Run()
@@ -277,7 +277,7 @@ takes no arguments, and returns nothing
 
 
 
-## <a name="Server">type</a> [Server](/src/target/interface.go?s=488:525#L26)
+## <a name="Server">type</a> [Server](/src/target/interface.go?s=484:521#L16)
 ``` go
 type Server struct {
     // contains filtered or unexported fields
@@ -292,7 +292,7 @@ to run and work with.
 
 
 
-### <a name="NewServer">func</a> [NewServer](/src/target/interface.go?s=623:654#L32)
+### <a name="NewServer">func</a> [NewServer](/src/target/interface.go?s=619:650#L22)
 ``` go
 func NewServer(r Runner) Server
 ```
@@ -303,7 +303,7 @@ interface and returns a Server
 
 
 
-### <a name="Server.Run">func</a> (Server) [Run](/src/target/interface.go?s=726:775#L37)
+### <a name="Server.Run">func</a> (Server) [Run](/src/target/interface.go?s=722:771#L27)
 ``` go
 func (s Server) Run(_ *NullArg, _ *NullArg) error
 ```
