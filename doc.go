@@ -51,7 +51,7 @@ The important steps are:
 
      seq := loadtest.NewSequenceID()
 
-A sequence ID is a string- using the same ID for all requests in a sequence of calls (completely analagous to a User Journey, say) allows us to identify slow routes better
+A sequence ID is a string- using the same ID for all requests in a sequence of calls (completely analogous to a User Journey, say) allows us to identify slow routes better
 
 
      _ = loadtest.DoRequest(seq, req)
