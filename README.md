@@ -1,3 +1,6 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/go-lo/go-lo)](https://goreportcard.com/report/github.com/go-lo/go-lo)
+[![Build Status](https://travis-ci.com/go-lo/go-lo.svg?branch=master)](https://travis-ci.com/go-lo/go-lo)
+[![GoDoc](https://godoc.org/github.com/go-lo/go-lo?status.svg)](https://godoc.org/github.com/go-lo/go-lo)
 
 
 # golo
@@ -8,17 +11,18 @@
 * [Subdirectories](#pkg-subdirectories)
 
 ## <a name="pkg-overview">Overview</a>
-package golo is a framework for running distributed loadtesting with go.
+Package golo is a framework for running distributed loadtesting with go.
 
-It consists of multiple agents which receive jobs from a scheduler, and send results to a collector.
-
-An agent will:
+When used in a loadtest it will:
 
 
-	* Receive a compiled loadtest (see below)
-	* Run this locally
-	* Send requests to this binary over rpc
-	* Stream STDOUT _from_ the binary and send data to a collector
+	* Provide a make http requests using anything which implements the golo.HTTPClient interface (the default value is an *http.Client from "net/http")
+	* Turn responses into the lineformat an agent (github.com/go-lo/agent) can parse and handle
+	* Prints these lines to STDOUT (via a gofunc) where an agent can parse them (this is to put the burden of buffering, parsing, and collecting onto an agent to allow a loadtest schedule to concentrate on just making requests
+
+It does all of this by exposing an RPC service which an agent uses to schedule a call.
+
+This library, then, is most useful when used with the rest of the go-lo suite but can realisitically be used by anything which works like a go-lo client.
 
 A simple loadtest looks like:
 
@@ -62,7 +66,7 @@ The important steps are:
 
 	seq := loadtest.NewSequenceID()
 
-A sequence ID is a string- using the same ID for all requests in a sequence of calls (completely analagous to a User Journey, say) allows us to identify slow routes better
+A sequence ID is a string- using the same ID for all requests in a sequence of calls (completely analogous to a User Journey, say) allows us to identify slow routes better
 
 
 	_ = loadtest.DoRequest(seq, req)
@@ -80,7 +84,6 @@ This will take our implementation of the interface loadtest.Runner and start up 
 
 ## <a name="pkg-index">Index</a>
 * [Constants](#pkg-constants)
-* [Variables](#pkg-variables)
 * [func DoRequest(id string, req *http.Request) (response *http.Response)](#DoRequest)
 * [func NewSequenceID() string](#NewSequenceID)
 * [func StartListener(server Server) (err error)](#StartListener)
@@ -110,13 +113,14 @@ const (
     DefaultSequenceID = "c276c8c7-6fec-5aa9-b6bd-4de12a49a9bb"
 )
 ```
-
-## <a name="pkg-variables">Variables</a>
 ``` go
-var (
+const (
+    // RPCAddr is the default host on which a schedule listens
+    // and an agent connects to
     RPCAddr = "127.0.0.1:9999"
 )
 ```
+
 
 
 ## <a name="DoRequest">func</a> [DoRequest](/src/target/request.go?s=1670:1740#L40)
@@ -145,7 +149,7 @@ Thus: a usable ID can always be guaranteed from this function
 
 
 
-## <a name="StartListener">func</a> [StartListener](/src/target/interface.go?s=923:968#L35)
+## <a name="StartListener">func</a> [StartListener](/src/target/interface.go?s=1014:1059#L37)
 ``` go
 func StartListener(server Server) (err error)
 ```
@@ -193,7 +197,7 @@ var (
 
 
 
-## <a name="NullArg">type</a> [NullArg](/src/target/interface.go?s=196:217#L5)
+## <a name="NullArg">type</a> [NullArg](/src/target/interface.go?s=287:308#L7)
 ``` go
 type NullArg struct{}
 ```
@@ -258,7 +262,7 @@ Output. It swallows errors.
 
 
 
-## <a name="Runner">type</a> [Runner](/src/target/interface.go?s=368:400#L10)
+## <a name="Runner">type</a> [Runner](/src/target/interface.go?s=459:491#L12)
 ``` go
 type Runner interface {
     Run()
@@ -277,7 +281,7 @@ takes no arguments, and returns nothing
 
 
 
-## <a name="Server">type</a> [Server](/src/target/interface.go?s=484:521#L16)
+## <a name="Server">type</a> [Server](/src/target/interface.go?s=575:612#L18)
 ``` go
 type Server struct {
     // contains filtered or unexported fields
@@ -292,7 +296,7 @@ to run and work with.
 
 
 
-### <a name="NewServer">func</a> [NewServer](/src/target/interface.go?s=619:650#L22)
+### <a name="NewServer">func</a> [NewServer](/src/target/interface.go?s=710:741#L24)
 ``` go
 func NewServer(r Runner) Server
 ```
@@ -303,7 +307,7 @@ interface and returns a Server
 
 
 
-### <a name="Server.Run">func</a> (Server) [Run](/src/target/interface.go?s=722:771#L27)
+### <a name="Server.Run">func</a> (Server) [Run](/src/target/interface.go?s=813:862#L29)
 ``` go
 func (s Server) Run(_ *NullArg, _ *NullArg) error
 ```

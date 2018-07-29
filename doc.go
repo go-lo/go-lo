@@ -1,15 +1,15 @@
 /*
 Package golo is a framework for running distributed loadtesting with go.
 
-It consists of multiple agents which receive jobs from a scheduler, and send results to a collector.
+When used in a loadtest it will:
 
+ * Provide a make http requests using anything which implements the golo.HTTPClient interface (the default value is an *http.Client from "net/http")
+ * Turn responses into the lineformat an agent (github.com/go-lo/agent) can parse and handle
+ * Prints these lines to STDOUT (via a gofunc) where an agent can parse them (this is to put the burden of buffering, parsing, and collecting onto an agent to allow a loadtest schedule to concentrate on just making requests
 
-An agent will:
+It does all of this by exposing an RPC service which an agent uses to schedule a call.
 
- * Receive a compiled loadtest (see below)
- * Run this locally
- * Send requests to this binary over rpc
- * Stream STDOUT _from_ the binary and send data to a collector
+This library, then, is most useful when used with the rest of the go-lo suite but can realisitically be used by anything which works like a go-lo client.
 
 A simple loadtest looks like:
 
