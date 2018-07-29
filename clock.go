@@ -10,12 +10,12 @@ type clock interface {
 
 type realClock struct{}
 
-func (_ realClock) now() time.Time {
+func (realClock) now() time.Time {
 	return time.Now()
 }
 
 type dummyClock struct{}
 
-func (_ dummyClock) now() time.Time {
+func (dummyClock) now() time.Time {
 	return time.Time{}
 }
