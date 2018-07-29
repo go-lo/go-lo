@@ -1,5 +1,5 @@
 /*
-package golo is a framework for running distributed loadtesting with go.
+Package golo is a framework for running distributed loadtesting with go.
 
 It consists of multiple agents which receive jobs from a scheduler, and send results to a collector.
 
@@ -51,7 +51,7 @@ The important steps are:
 
      seq := loadtest.NewSequenceID()
 
-A sequence ID is a string- using the same ID for all requests in a sequence of calls (completely analagous to a User Journey, say) allows us to identify slow routes better
+A sequence ID is a string- using the same ID for all requests in a sequence of calls (completely analogous to a User Journey, say) allows us to identify slow routes better
 
 
      _ = loadtest.DoRequest(seq, req)
