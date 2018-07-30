@@ -22,7 +22,7 @@ When used in a loadtest it will:
 
 It does all of this by exposing an RPC service which an agent uses to schedule a call.
 
-This library, then, is most useful when used with the rest of the go-lo suite but can realisitically be used by anything which works like a go-lo client.
+This library, then, is most useful when used with the rest of the go-lo suite but can realisitically be used by anything which works like a go-lo agent.
 
 A simple loadtest looks like:
 
@@ -33,51 +33,51 @@ A simple loadtest looks like:
 	    "log"
 	    "net/http"
 	
-	    "github.com/jspc/loadtest"
+	    "github.com/go-lo/go-lo"
 	)
 	
-	type MagnumAPI struct {
+	type API struct {
 	    URL string
 	}
 	
-	func (m MagnumAPI) Run() {
+	func (a API) Run() {
 	    req, err := http.NewRequest("GET", m.URL, nil)
 	    if err != nil {
 	        panic(err)
 	    }
 	
-	    seq := loadtest.NewSequenceID()
+	    seq := golo.NewSequenceID()
 	
-	    _ = loadtest.DoRequest(seq, req)
+	    _ = golo.DoRequest(seq, req)
 	}
 	
 	func main() {
-	    m := MagnumAPI{
-	        URL: "<a href="http://10.50.0.4:8765">http://10.50.0.4:8765</a>",
+	    a := API{
+	        URL: "<a href="http://localhost:8765">http://localhost:8765</a>",
 	    }
 	
-	    server := loadtest.NewServer(m)
+	    server := golo.New(m)
 	
-	    panic(loadtest.StartListener(server))
+	    panic(golo.Start(server))
 	}
 
 The important steps are:
 
 
-	seq := loadtest.NewSequenceID()
+	seq := golo.NewSequenceID()
 
 A sequence ID is a string- using the same ID for all requests in a sequence of calls (completely analogous to a User Journey, say) allows us to identify slow routes better
 
 
-	_ = loadtest.DoRequest(seq, req)
+	_ = golo.DoRequest(seq, req)
 
 This executes *http.Request `req` with a sequence ID. This returns an *http.Response, and outputs pertinent json to STDOUT for the agent to pickup
 
 
-	server := loadtest.NewServer(m)
-	panic(loadtest.StartListener(server))
+	server := golo.New(m)
+	panic(golo.Start(server))
 
-This will take our implementation of the interface loadtest.Runner and start up the RPC listener
+This will take our implementation of the interface golo.Runner and start up the RPC listener
 
 
 
@@ -86,7 +86,7 @@ This will take our implementation of the interface loadtest.Runner and start up 
 * [Constants](#pkg-constants)
 * [func DoRequest(id string, req *http.Request) (response *http.Response)](#DoRequest)
 * [func NewSequenceID() string](#NewSequenceID)
-* [func StartListener(server Server) (err error)](#StartListener)
+* [func Start(server Server) (err error)](#Start)
 * [type HTTPClient](#HTTPClient)
 * [type NullArg](#NullArg)
 * [type Output](#Output)
@@ -94,7 +94,7 @@ This will take our implementation of the interface loadtest.Runner and start up 
   * [func (o Output) String() string](#Output.String)
 * [type Runner](#Runner)
 * [type Server](#Server)
-  * [func NewServer(r Runner) Server](#NewServer)
+  * [func New(r Runner) Server](#New)
   * [func (s Server) Run(_ *NullArg, _ *NullArg) error](#Server.Run)
 
 
@@ -137,7 +137,7 @@ doing it it's self.
 
 
 
-## <a name="NewSequenceID">func</a> [NewSequenceID](/src/target/request.go?s=2471:2498#L75)
+## <a name="NewSequenceID">func</a> [NewSequenceID](/src/target/request.go?s=2421:2448#L71)
 ``` go
 func NewSequenceID() string
 ```
@@ -149,11 +149,11 @@ Thus: a usable ID can always be guaranteed from this function
 
 
 
-## <a name="StartListener">func</a> [StartListener](/src/target/interface.go?s=1014:1059#L37)
+## <a name="Start">func</a> [Start](/src/target/interface.go?s=1225:1262#L48)
 ``` go
-func StartListener(server Server) (err error)
+func Start(server Server) (err error)
 ```
-StartListener will start an RPC server on loadtest.RPCAddr
+Start will start an RPC server on loadtest.RPCAddr
 and register Server ahead of Agents scheduling jobs
 
 
@@ -197,7 +197,7 @@ var (
 
 
 
-## <a name="NullArg">type</a> [NullArg](/src/target/interface.go?s=287:308#L7)
+## <a name="NullArg">type</a> [NullArg](/src/target/interface.go?s=299:320#L8)
 ``` go
 type NullArg struct{}
 ```
@@ -262,7 +262,7 @@ Output. It swallows errors.
 
 
 
-## <a name="Runner">type</a> [Runner](/src/target/interface.go?s=459:491#L12)
+## <a name="Runner">type</a> [Runner](/src/target/interface.go?s=471:503#L13)
 ``` go
 type Runner interface {
     Run()
@@ -281,7 +281,7 @@ takes no arguments, and returns nothing
 
 
 
-## <a name="Server">type</a> [Server](/src/target/interface.go?s=575:612#L18)
+## <a name="Server">type</a> [Server](/src/target/interface.go?s=587:624#L19)
 ``` go
 type Server struct {
     // contains filtered or unexported fields
@@ -296,18 +296,20 @@ to run and work with.
 
 
 
-### <a name="NewServer">func</a> [NewServer](/src/target/interface.go?s=710:741#L24)
+### <a name="New">func</a> [New](/src/target/interface.go?s=848:873#L27)
 ``` go
-func NewServer(r Runner) Server
+func New(r Runner) Server
 ```
-NewServer takes scheduler code which implements the Runner
-interface and returns a Server
+New takes scheduler code which implements the Runner
+interface and returns a Server. It also runs some bootstrap
+tasks to ensure a server has various things set that it
+ought to, like a clock and an HTTPClient
 
 
 
 
 
-### <a name="Server.Run">func</a> (Server) [Run](/src/target/interface.go?s=813:862#L29)
+### <a name="Server.Run">func</a> (Server) [Run](/src/target/interface.go?s=1032:1081#L40)
 ``` go
 func (s Server) Run(_ *NullArg, _ *NullArg) error
 ```

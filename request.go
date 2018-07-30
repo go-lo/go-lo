@@ -48,10 +48,6 @@ const (
 // writer of a schedule, this function removes that boilerplate by
 // doing it it's self.
 func DoRequest(id string, req *http.Request) (response *http.Response) {
-	if Client == nil {
-		Client = &http.Client{}
-	}
-
 	if CloseRequests {
 		req.Close = true
 	}

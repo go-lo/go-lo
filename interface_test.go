@@ -16,11 +16,11 @@ func TestNewServer(t *testing.T) {
 		}
 	}()
 
-	NewServer(dummyRunner{})
+	New(dummyRunner{})
 }
 
 func TestServer_Run(t *testing.T) {
-	s := NewServer(dummyRunner{})
+	s := New(dummyRunner{})
 
 	err := s.Run(&NullArg{}, &NullArg{})
 	if err != nil {
@@ -29,7 +29,7 @@ func TestServer_Run(t *testing.T) {
 }
 
 func TestSetupListener(t *testing.T) {
-	s := NewServer(dummyRunner{})
+	s := New(dummyRunner{})
 
 	t.Run("clean configuration", func(t *testing.T) {
 		_, l, err := setupListener(s)
