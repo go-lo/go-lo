@@ -9,7 +9,7 @@ When used in a loadtest it will:
 
 It does all of this by exposing an RPC service which an agent uses to schedule a call.
 
-This library, then, is most useful when used with the rest of the go-lo suite but can realisitically be used by anything which works like a go-lo client.
+This library, then, is most useful when used with the rest of the go-lo suite but can realisitically be used by anything which works like a go-lo agent.
 
 A simple loadtest looks like:
 
@@ -19,50 +19,50 @@ A simple loadtest looks like:
      "log"
      "net/http"
 
-     "github.com/jspc/loadtest"
+     "github.com/go-lo/go-lo"
  )
 
- type MagnumAPI struct {
+ type API struct {
      URL string
  }
 
- func (m MagnumAPI) Run() {
+ func (a API) Run() {
      req, err := http.NewRequest("GET", m.URL, nil)
      if err != nil {
          panic(err)
      }
 
-     seq := loadtest.NewSequenceID()
+     seq := golo.NewSequenceID()
 
-     _ = loadtest.DoRequest(seq, req)
+     _ = golo.DoRequest(seq, req)
  }
 
  func main() {
-     m := MagnumAPI{
-         URL: "http://10.50.0.4:8765",
+     a := API{
+         URL: "http://localhost:8765",
      }
 
-     server := loadtest.NewServer(m)
+     server := golo.New(m)
 
-     panic(loadtest.StartListener(server))
+     panic(golo.Start(server))
  }
 
 The important steps are:
 
-     seq := loadtest.NewSequenceID()
+     seq := golo.NewSequenceID()
 
 A sequence ID is a string- using the same ID for all requests in a sequence of calls (completely analogous to a User Journey, say) allows us to identify slow routes better
 
 
-     _ = loadtest.DoRequest(seq, req)
+     _ = golo.DoRequest(seq, req)
 
 This executes *http.Request `req` with a sequence ID. This returns an *http.Response, and outputs pertinent json to STDOUT for the agent to pickup
 
 
-     server := loadtest.NewServer(m)
-     panic(loadtest.StartListener(server))
+     server := golo.New(m)
+     panic(golo.Start(server))
 
-This will take our implementation of the interface loadtest.Runner and start up the RPC listener
+This will take our implementation of the interface golo.Runner and start up the RPC listener
 
 */
 package golo
