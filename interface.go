@@ -3,6 +3,7 @@ package golo
 import (
 	"fmt"
 	"net"
+	"net/http"
 	"net/rpc"
 )
 
@@ -29,9 +30,19 @@ type Server struct {
 	runner Runner
 }
 
-// NewServer takes scheduler code which implements the Runner
-// interface and returns a Server
-func NewServer(r Runner) Server {
+// New takes scheduler code which implements the Runner
+// interface and returns a Server. It also runs some bootstrap
+// tasks to ensure a server has various things set that it
+// ought to, like a clock and an HTTPClient
+func New(r Runner) Server {
+	if c == nil {
+		c = realClock{}
+	}
+
+	if Client == nil {
+		Client = &http.Client{}
+	}
+
 	return Server{r}
 }
 
@@ -42,9 +53,9 @@ func (s Server) Run(_ *NullArg, _ *NullArg) error {
 	return nil
 }
 
-// StartListener will start an RPC server on loadtest.RPCAddr
+// Start will start an RPC server on loadtest.RPCAddr
 // and register Server ahead of Agents scheduling jobs
-func StartListener(server Server) (err error) {
+func Start(server Server) (err error) {
 	s, l, err := setupListener(server)
 	if err != nil {
 		return
