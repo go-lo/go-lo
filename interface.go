@@ -41,6 +41,17 @@ func New(r Runner) Server {
 
 	if Client == nil {
 		Client = &http.Client{}
+
+		rt := http.DefaultTransport
+		transport, ok := rt.(*http.Transport)
+		if ok {
+			// If the default round tripper has been set to something
+			// funky elsewhere then don't muck about with it here
+			(*transport).MaxIdleConns = 1024
+			(*transport).MaxIdleConnsPerHost = 1024
+		}
+
+		Client = &http.Client{Transport: transport}
 	}
 
 	return Server{r}

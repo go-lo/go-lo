@@ -2,6 +2,8 @@ package golo
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/satori/go.uuid"
@@ -65,6 +67,9 @@ func DoRequest(id string, req *http.Request) (response *http.Response) {
 	if err != nil {
 		o.Error = err
 	}
+
+	// Read body to clear it
+	io.Copy(ioutil.Discard, response.Body)
 
 	// Let this happen out of band- we've already done the
 	// difficult stuff
