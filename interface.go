@@ -59,6 +59,13 @@ func New(r Runner) Server {
 
 // Run is the RPC interface into scheduler code
 func (s Server) Run(_ *NullArg, _ *NullArg) error {
+	defer func() {
+		err := recover()
+		if err != nil {
+			fmt.Errorf("%+v", err)
+		}
+	}()
+
 	s.runner.Run()
 
 	return nil
