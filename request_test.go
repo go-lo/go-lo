@@ -1,3 +1,5 @@
+// +build !output
+
 package golo
 
 import (
@@ -24,17 +26,6 @@ func (c *dummyClient) Do(req *http.Request) (r *http.Response, err error) {
 }
 
 func TestDoRequest(t *testing.T) {
-	// This is a pretty crap test- we're just waiting to
-	// see if it blows up: the most important part is what
-	// is printed, but because we do this in a gofunc there's
-	// no good way of capturing it as an example- we're always
-	// going to be stuck either time.Sleep'ing, or hoping to
-	// lose the race condition some other way.
-	//
-	// Instead: we can trust that so long as we get no panics,
-	// and our tests around Parse() and Output.String() all
-	// pass that this is working too.
-
 	sampleURL, _ := url.Parse("https://example.com")
 
 	for _, test := range []struct {
