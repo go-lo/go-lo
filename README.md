@@ -99,7 +99,7 @@ This will take our implementation of the interface golo.Runner and start up the 
 
 
 #### <a name="pkg-files">Package files</a>
-[clock.go](/src/github.com/go-lo/go-lo/clock.go) [doc.go](/src/github.com/go-lo/go-lo/doc.go) [interface.go](/src/github.com/go-lo/go-lo/interface.go) [output.go](/src/github.com/go-lo/go-lo/output.go) [request.go](/src/github.com/go-lo/go-lo/request.go) 
+[clock.go](/src/github.com/go-lo/go-lo/clock.go) [doc.go](/src/github.com/go-lo/go-lo/doc.go) [interface.go](/src/github.com/go-lo/go-lo/interface.go) [logging.go](/src/github.com/go-lo/go-lo/logging.go) [output.go](/src/github.com/go-lo/go-lo/output.go) [request.go](/src/github.com/go-lo/go-lo/request.go) 
 
 
 ## <a name="pkg-constants">Constants</a>
@@ -123,7 +123,7 @@ const (
 
 
 
-## <a name="DoRequest">func</a> [DoRequest](/src/target/request.go?s=1670:1740#L40)
+## <a name="DoRequest">func</a> [DoRequest](/src/target/request.go?s=1681:1751#L51)
 ``` go
 func DoRequest(id string, req *http.Request) (response *http.Response)
 ```
@@ -133,11 +133,11 @@ care of. The purpose of this is to capture additional information,
 such as duration and Sequence IDs.
 Rather than pushing the responsibility of outputting this data to the
 writer of a schedule, this function removes that boilerplate by
-doing it it's self.
+doing it its self.
 
 
 
-## <a name="NewSequenceID">func</a> [NewSequenceID](/src/target/request.go?s=2421:2448#L71)
+## <a name="NewSequenceID">func</a> [NewSequenceID](/src/target/request.go?s=2567:2594#L90)
 ``` go
 func NewSequenceID() string
 ```
@@ -149,7 +149,7 @@ Thus: a usable ID can always be guaranteed from this function
 
 
 
-## <a name="Start">func</a> [Start](/src/target/interface.go?s=1225:1262#L48)
+## <a name="Start">func</a> [Start](/src/target/interface.go?s=1643:1680#L76)
 ``` go
 func Start(server Server) (err error)
 ```
@@ -159,7 +159,7 @@ and register Server ahead of Agents scheduling jobs
 
 
 
-## <a name="HTTPClient">type</a> [HTTPClient](/src/target/request.go?s=247:376#L4)
+## <a name="HTTPClient">type</a> [HTTPClient](/src/target/request.go?s=259:388#L15)
 ``` go
 type HTTPClient interface {
     // Do tracks https://golang.org/pkg/net/http/#Client.Do
@@ -197,7 +197,7 @@ var (
 
 
 
-## <a name="NullArg">type</a> [NullArg](/src/target/interface.go?s=299:320#L8)
+## <a name="NullArg">type</a> [NullArg](/src/target/interface.go?s=299:320#L18)
 ``` go
 type NullArg struct{}
 ```
@@ -213,7 +213,7 @@ but that can be put into rpc calls to aid readability
 
 
 
-## <a name="Output">type</a> [Output](/src/target/output.go?s=338:699#L9)
+## <a name="Output">type</a> [Output](/src/target/output.go?s=338:699#L19)
 ``` go
 type Output struct {
     SequenceID string        `json:"sequenceID"`
@@ -239,7 +239,7 @@ off the back of it to remove boilerplate in schedule code
 
 
 
-### <a name="Parse">func</a> [Parse](/src/target/output.go?s=902:996#L24)
+### <a name="Parse">func</a> [Parse](/src/target/output.go?s=902:996#L34)
 ``` go
 func Parse(id string, duration time.Duration, r *http.Request, resp *http.Response) (o Output)
 ```
@@ -252,7 +252,7 @@ in a journey together
 
 
 
-### <a name="Output.String">func</a> (Output) [String](/src/target/output.go?s=1317:1348#L43)
+### <a name="Output.String">func</a> (Output) [String](/src/target/output.go?s=1317:1348#L53)
 ``` go
 func (o Output) String() string
 ```
@@ -262,7 +262,7 @@ Output. It swallows errors.
 
 
 
-## <a name="Runner">type</a> [Runner](/src/target/interface.go?s=471:503#L13)
+## <a name="Runner">type</a> [Runner](/src/target/interface.go?s=471:503#L23)
 ``` go
 type Runner interface {
     Run()
@@ -281,7 +281,7 @@ takes no arguments, and returns nothing
 
 
 
-## <a name="Server">type</a> [Server](/src/target/interface.go?s=587:624#L19)
+## <a name="Server">type</a> [Server](/src/target/interface.go?s=587:624#L29)
 ``` go
 type Server struct {
     // contains filtered or unexported fields
@@ -296,7 +296,7 @@ to run and work with.
 
 
 
-### <a name="New">func</a> [New](/src/target/interface.go?s=848:873#L27)
+### <a name="New">func</a> [New](/src/target/interface.go?s=848:873#L37)
 ``` go
 func New(r Runner) Server
 ```
@@ -309,7 +309,7 @@ ought to, like a clock and an HTTPClient
 
 
 
-### <a name="Server.Run">func</a> (Server) [Run](/src/target/interface.go?s=1032:1081#L40)
+### <a name="Server.Run">func</a> (Server) [Run](/src/target/interface.go?s=1361:1410#L61)
 ``` go
 func (s Server) Run(_ *NullArg, _ *NullArg) error
 ```
