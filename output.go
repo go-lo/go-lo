@@ -51,6 +51,11 @@ func Parse(id string, duration time.Duration, r *http.Request, resp *http.Respon
 // String outputs a marshal'd json string for the attached
 // Output. It swallows errors.
 func (o Output) String() string {
+	if o.Error != nil {
+		extractedError := o.Error
+		o.Error = extractedError.(error).Error()
+	}
+
 	output, _ := json.Marshal(o)
 
 	return string(output)
