@@ -3,6 +3,7 @@
 package golo
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"testing"
@@ -35,6 +36,34 @@ func TestParse(t *testing.T) {
 			o := Parse(test.id, test.duration, test.request, test.response)
 			if test.expect != o.String() {
 				t.Errorf("expected `%s`, received `%s`", test.expect, o.String())
+			}
+		})
+	}
+}
+
+func TestOutput_String(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		output Output
+		expect string
+	}{
+		{"empty output",
+			Output{},
+			"{\"sequenceID\":\"\",\"url\":\"\",\"method\":\"\",\"status\":0,\"size\":0,\"timestamp\":\"0001-01-01T00:00:00Z\",\"duration\":0,\"error\":null}"},
+
+		{"succesful request",
+			Output{SequenceID: "", URL: "http://example.com", Method: "GET", Status: 200, Size: 13, Error: nil},
+			"{\"sequenceID\":\"\",\"url\":\"http://example.com\",\"method\":\"GET\",\"status\":200,\"size\":13,\"timestamp\":\"0001-01-01T00:00:00Z\",\"duration\":0,\"error\":null}"},
+
+		{"erroring request",
+			Output{SequenceID: "", URL: "http://example.com", Method: "GET", Status: 0, Size: 0, Error: fmt.Errorf("uh-oh")},
+			"{\"sequenceID\":\"\",\"url\":\"http://example.com\",\"method\":\"GET\",\"status\":0,\"size\":0,\"timestamp\":\"0001-01-01T00:00:00Z\",\"duration\":0,\"error\":\"uh-oh\"}"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			s := test.output.String()
+
+			if test.expect != s {
+				t.Errorf("expected:\n%q\nreceived:\n%q", test.expect, s)
 			}
 		})
 	}
