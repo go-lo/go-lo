@@ -1,7 +1,6 @@
 package golo
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -48,7 +47,7 @@ const (
 // such as duration and Sequence IDs.
 // Rather than pushing the responsibility of outputting this data to the
 // writer of a schedule, this function removes that boilerplate by
-// doing it it's self.
+// doing it its self.
 func DoRequest(id string, req *http.Request) (response *http.Response) {
 	if CloseRequests {
 		req.Close = true
@@ -58,7 +57,7 @@ func DoRequest(id string, req *http.Request) (response *http.Response) {
 	response, err := Client.Do(req)
 	end := c.now()
 
-	if err == nil {
+	if err == nil && response.Body != nil {
 		// Read body to clear it
 		io.Copy(ioutil.Discard, response.Body)
 
@@ -73,7 +72,12 @@ func DoRequest(id string, req *http.Request) (response *http.Response) {
 
 	// Let this happen out of band- we've already done the
 	// difficult stuff
-	go fmt.Println(o.String())
+	go func(out Output) {
+		// scope
+		out = out
+
+		logChan <- out
+	}(o)
 
 	return
 }

@@ -74,6 +74,9 @@ func (s Server) Run(_ *NullArg, _ *NullArg) error {
 // Start will start an RPC server on loadtest.RPCAddr
 // and register Server ahead of Agents scheduling jobs
 func Start(server Server) (err error) {
+	// Start logging
+	go logLoop()
+
 	s, l, err := setupListener(server)
 	if err != nil {
 		return

@@ -1,3 +1,5 @@
+// +build !output
+
 package golo
 
 import (
