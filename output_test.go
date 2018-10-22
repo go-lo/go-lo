@@ -10,6 +10,14 @@ import (
 	"time"
 )
 
+type testError struct {
+	m string
+}
+
+func (e testError) Error() string {
+	return e.m
+}
+
 func TestParse(t *testing.T) {
 	sampleURL, _ := url.Parse("https://example.com")
 	c = dummyClock{}
@@ -55,9 +63,17 @@ func TestOutput_String(t *testing.T) {
 			Output{SequenceID: "", URL: "http://example.com", Method: "GET", Status: 200, Size: 13, Error: nil},
 			"{\"sequenceID\":\"\",\"url\":\"http://example.com\",\"method\":\"GET\",\"status\":200,\"size\":13,\"timestamp\":\"0001-01-01T00:00:00Z\",\"duration\":0,\"error\":null}"},
 
-		{"erroring request",
+		{"erroring request with naked error",
 			Output{SequenceID: "", URL: "http://example.com", Method: "GET", Status: 0, Size: 0, Error: fmt.Errorf("uh-oh")},
 			"{\"sequenceID\":\"\",\"url\":\"http://example.com\",\"method\":\"GET\",\"status\":0,\"size\":0,\"timestamp\":\"0001-01-01T00:00:00Z\",\"duration\":0,\"error\":\"uh-oh\"}"},
+
+		{"erroring request with custom error",
+			Output{SequenceID: "", URL: "http://example.com", Method: "GET", Status: 0, Size: 0, Error: testError{"uh-oh"}},
+			"{\"sequenceID\":\"\",\"url\":\"http://example.com\",\"method\":\"GET\",\"status\":0,\"size\":0,\"timestamp\":\"0001-01-01T00:00:00Z\",\"duration\":0,\"error\":\"uh-oh\"}"},
+
+		{"erroring network request",
+			Output{SequenceID: "", URL: "http://example.com", Method: "GET", Status: 0, Size: 0, Error: &url.Error{Op: "POST", Err: fmt.Errorf("something")}},
+			"{\"sequenceID\":\"\",\"url\":\"http://example.com\",\"method\":\"GET\",\"status\":0,\"size\":0,\"timestamp\":\"0001-01-01T00:00:00Z\",\"duration\":0,\"error\":\"POST : something\"}"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			s := test.output.String()

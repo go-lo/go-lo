@@ -3,11 +3,14 @@ package golo
 import (
 	"encoding/json"
 	"net/http"
+	"reflect"
 	"time"
 )
 
 var (
 	c clock
+
+	errorType = reflect.TypeOf((*error)(nil)).Elem()
 )
 
 // Output is a normalised, enriched struct containing
@@ -52,13 +55,8 @@ func Parse(id string, duration time.Duration, r *http.Request, resp *http.Respon
 // Output. It swallows errors.
 func (o Output) String() string {
 	if o.Error != nil {
-		switch o.Error.(type) {
-		case error:
-			extractedError := o.Error
-			o.Error = extractedError.(error).Error()
-
-		default:
-			// shrug
+		if reflect.TypeOf(o.Error).Implements(errorType) {
+			o.Error = o.Error.(error).Error()
 		}
 	}
 
