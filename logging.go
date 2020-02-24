@@ -6,11 +6,11 @@ import (
 )
 
 var (
-	// logChan takes output objects and, one by one, spits them out.
+	// LogChan takes output objects and, one by one, spits them out.
 	// This operation is sequential, or at least more sequential than
 	// before, to avoid crashing on `panic: too many concurrent operations on a single file or socket (max 1048575)`
 	// errors
-	logChan = make(chan Output)
+	LogChan = make(chan Output)
 )
 
 // logLoop iterates over the logChan, turns Outputs to json,
@@ -24,7 +24,7 @@ func logLoop() {
 		}
 	}()
 
-	for o := range logChan {
+	for o := range LogChan {
 		fmt.Println(o.String())
 	}
 }

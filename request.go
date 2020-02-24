@@ -76,7 +76,7 @@ func DoRequest(id string, req *http.Request) (response *http.Response) {
 		// scope
 		out = out
 
-		logChan <- out
+		LogChan <- out
 	}(o)
 
 	return
