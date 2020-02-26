@@ -1,0 +1,4 @@
+github.com/go-lo/go-lo v0.0.0-20200224080846-2e0d24490bf1 h1:70RDCWs1BHXIdyNNL8V7+34ztUj+efrgqqYnT0EDIsU=
+github.com/go-lo/go-lo v0.0.0-20200224080846-2e0d24490bf1/go.mod h1:z51xU5bA839COt7bWEYFv1MYzme9k0w1bz6lFYzaEes=
+github.com/gofrs/uuid v3.2.0+incompatible h1:y12jRkkFxsd7GpqdSZ+/KCs/fJbqpEXSGd4+jfEaewE=
+github.com/gofrs/uuid v3.2.0+incompatible/go.mod h1:b2aQJv3Z4Fp6yNu3cdSllBxTCLRxnplIgP/c0N/04lM=

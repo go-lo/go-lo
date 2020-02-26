@@ -1,10 +1,11 @@
 package golo
 
 import (
-	"fmt"
+	"context"
 	"net"
-	"net/http"
-	"net/rpc"
+	"time"
+
+	"google.golang.org/grpc"
 )
 
 const (
@@ -13,85 +14,58 @@ const (
 	RPCAddr = "127.0.0.1:9999"
 )
 
-// NullArg is a set of args that don't do anything
-// but that can be put into rpc calls to aid readability
-type NullArg struct{}
+// TriggerFunc is a function which a loadtest calls. All
+// loadtests have to do is implement this function in a go
+// application.
+type TriggerFunc func(*Context, *Response) (*Response, error)
 
-// Runner is the interface to implement in scheduler
-// code; it provides a single function `Run()` which
-// takes no arguments, and returns nothing
-type Runner interface {
-	Run()
-}
-
-// Server will expose scheduler code over RPC for agents
-// to run and work with.
-type Server struct {
-	runner Runner
+// Loadtest holds configuration and gRPC contexts which Loadtests
+// must be wrapped in
+type Loadtest struct {
+	trigger TriggerFunc
+	server  *grpc.Server
 }
 
 // New takes scheduler code which implements the Runner
 // interface and returns a Server. It also runs some bootstrap
 // tasks to ensure a server has various things set that it
 // ought to, like a clock and an HTTPClient
-func New(r Runner) Server {
-	if c == nil {
-		c = realClock{}
+func New(f TriggerFunc) (l Loadtest, err error) {
+	l = Loadtest{
+		trigger: f,
 	}
 
-	if Client == nil {
-		Client = &http.Client{}
+	l.server = grpc.NewServer()
+	RegisterJobServer(l.server, l)
 
-		rt := http.DefaultTransport
-		transport, ok := rt.(*http.Transport)
-		if ok {
-			// If the default round tripper has been set to something
-			// funky elsewhere then don't muck about with it here
-			(*transport).MaxIdleConns = 1024
-			(*transport).MaxIdleConnsPerHost = 1024
-		}
-
-		Client = &http.Client{Transport: transport}
-	}
-
-	return Server{r}
-}
-
-// Run is the RPC interface into scheduler code
-func (s Server) Run(_ *NullArg, _ *NullArg) error {
-	defer func() {
-		err := recover()
-		if err != nil {
-			fmt.Errorf("%+v", err)
-		}
-	}()
-
-	s.runner.Run()
-
-	return nil
+	return
 }
 
 // Start will start an RPC server on loadtest.RPCAddr
 // and register Server ahead of Agents scheduling jobs
-func Start(server Server) (err error) {
-	// Start logging
-	go logLoop()
-
-	s, l, err := setupListener(server)
+func (l Loadtest) Start() (err error) {
+	// Listen to new requests
+	lis, err := net.Listen("tcp", RPCAddr)
 	if err != nil {
 		return
 	}
 
-	s.Accept(l)
+	l.server.Serve(lis)
 
-	return fmt.Errorf("Server has gone away")
+	return
 }
 
-func setupListener(server Server) (s *rpc.Server, l net.Listener, err error) {
-	s = rpc.NewServer()
-	s.Register(&server)
+// Trigger creates contexts/ outputs, and passes them to
+// (Loadtest).trigger() to run a test
+func (l Loadtest) Trigger(ctx context.Context, c *Context) (r *Response, err error) {
+	r = &Response{
+		JobName: c.JobName,
+		Tags:    make([]*ResponseTag, 0),
+	}
 
-	l, err = net.Listen("tcp", RPCAddr)
+	start := time.Now()
+	r, err = l.trigger(c, r)
+	r.Duration = uint64(time.Now().Sub(start))
 
 	return
 }

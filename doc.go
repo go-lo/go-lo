@@ -1,68 +1,61 @@
 /*
-Package golo is a framework for running distributed loadtesting with go.
+Package golo is a framework for running and writing distributed loadtests with go.
 
-When used in a loadtest it will:
+It does this by wrapping a special function, with the signature:
 
- * Provide a make http requests using anything which implements the golo.HTTPClient interface (the default value is an *http.Client from "net/http")
- * Turn responses into the lineformat an agent (github.com/go-lo/agent) can parse and handle
- * Prints these lines to STDOUT (via a gofunc) where an agent can parse them (this is to put the burden of buffering, parsing, and collecting onto an agent to allow a loadtest schedule to concentrate on just making requests
+  func(*golo.Context, *golo.Response) (*golo.Response, error)
 
-It does all of this by exposing an RPC service which an agent uses to schedule a call.
+This function can then perform whatever tests it needs, returning loadtest run data which is then used
+to report and chart on test runs.
 
-This library, then, is most useful when used with the rest of the go-lo suite but can realisitically be used by anything which works like a go-lo agent.
+A simple go-lo loadtest binary could be as simple as:
 
-A simple loadtest looks like:
+  package main
 
- package main
+  import (
+      "net/http"
 
- import (
-     "log"
-     "net/http"
+      "github.com/go-lo/go-lo"
+  )
 
-     "github.com/go-lo/go-lo"
- )
+  var (
+      url = "https://example.com"
+  )
 
- type API struct {
-     URL string
- }
+  func Trigger(c *golo.Context, r *golo.Response) (*golo.Response, error) {
+      resp, err := http.Get(url)
 
- func (a API) Run() {
-     req, err := http.NewRequest("GET", m.URL, nil)
-     if err != nil {
-         panic(err)
-     }
+      if err != nil {
+          r.Error = true
+          r.Output = err.Error()
+      }
 
-     seq := golo.NewSequenceID()
+      // Set the Job ID for this run
+      r.Id = golo.NewSequenceID()
 
-     _ = golo.DoRequest(seq, req)
- }
+      // Add some tags
+      r.Tags = golo.Tagify(map[string]interface{}{
+          "status": resp.Status,
+          "size":   resp.ContentLength,
+          "url":    url,
+      })
 
- func main() {
-     a := API{
-         URL: "http://localhost:8765",
-     }
+      return r, nil
+  }
 
-     server := golo.New(m)
+  func main() {
+      loadtest, err := golo.New(Trigger)
+      if err != nil {
+          panic(err)
+      }
 
-     panic(golo.Start(server))
- }
-
-The important steps are:
-
-     seq := golo.NewSequenceID()
-
-A sequence ID is a string- using the same ID for all requests in a sequence of calls (completely analogous to a User Journey, say) allows us to identify slow routes better
-
-
-     _ = golo.DoRequest(seq, req)
-
-This executes *http.Request `req` with a sequence ID. This returns an *http.Response, and outputs pertinent json to STDOUT for the agent to pickup
+      err = loadtest.Start()
+      if err != nil {
+          panic(err)
+      }
+  }
 
 
-     server := golo.New(m)
-     panic(golo.Start(server))
-
-This will take our implementation of the interface golo.Runner and start up the RPC listener
-
+This loadtest can be uplaoded to a go-lo agent, with a schedule, and you should see results.
 */
 package golo
