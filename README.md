@@ -11,95 +11,126 @@
 * [Subdirectories](#pkg-subdirectories)
 
 ## <a name="pkg-overview">Overview</a>
-Package golo is a framework for running distributed loadtesting with go.
+Package golo is a framework for running and writing distributed loadtests with go.
 
-When used in a loadtest it will:
+It does this by wrapping a special function, with the signature:
 
 
-	* Provide a make http requests using anything which implements the golo.HTTPClient interface (the default value is an *http.Client from "net/http")
-	* Turn responses into the lineformat an agent (github.com/go-lo/agent) can parse and handle
-	* Prints these lines to STDOUT (via a gofunc) where an agent can parse them (this is to put the burden of buffering, parsing, and collecting onto an agent to allow a loadtest schedule to concentrate on just making requests
+	func(*golo.Context, *golo.Response) (*golo.Response, error)
 
-It does all of this by exposing an RPC service which an agent uses to schedule a call.
+This function can then perform whatever tests it needs, returning loadtest run data which is then used
+to report and chart on test runs.
 
-This library, then, is most useful when used with the rest of the go-lo suite but can realisitically be used by anything which works like a go-lo agent.
-
-A simple loadtest looks like:
+A simple go-lo loadtest binary could be as simple as:
 
 
 	package main
 	
 	import (
-	    "log"
 	    "net/http"
 	
 	    "github.com/go-lo/go-lo"
 	)
 	
-	type API struct {
-	    URL string
+	var (
+	    url = "<a href="https://example.com">https://example.com</a>"
+	)
+	
+	func Trigger(c *golo.Context, r *golo.Response) (*golo.Response, error) {
+	    resp, err := http.Get(url)
+	
+	    if err != nil {
+	        r.Error = true
+	        r.Output = err.Error()
+	    }
+	
+	    // Set the Job ID for this run
+	    r.Id = golo.NewSequenceID()
+	
+	    // Add some tags
+	    r.Tags = golo.Tagify(map[string]interface{}{
+	        "status": resp.Status,
+	        "size":   resp.ContentLength,
+	        "url":    url,
+	    })
+	
+	    return r, nil
 	}
 	
-	func (a API) Run() {
-	    req, err := http.NewRequest("GET", m.URL, nil)
+	func main() {
+	    loadtest, err := golo.New(Trigger)
 	    if err != nil {
 	        panic(err)
 	    }
 	
-	    seq := golo.NewSequenceID()
-	
-	    _ = golo.DoRequest(seq, req)
-	}
-	
-	func main() {
-	    a := API{
-	        URL: "<a href="http://localhost:8765">http://localhost:8765</a>",
+	    err = loadtest.Start()
+	    if err != nil {
+	        panic(err)
 	    }
-	
-	    server := golo.New(m)
-	
-	    panic(golo.Start(server))
 	}
 
-The important steps are:
-
-
-	seq := golo.NewSequenceID()
-
-A sequence ID is a string- using the same ID for all requests in a sequence of calls (completely analogous to a User Journey, say) allows us to identify slow routes better
-
-
-	_ = golo.DoRequest(seq, req)
-
-This executes *http.Request `req` with a sequence ID. This returns an *http.Response, and outputs pertinent json to STDOUT for the agent to pickup
-
-
-	server := golo.New(m)
-	panic(golo.Start(server))
-
-This will take our implementation of the interface golo.Runner and start up the RPC listener
+This loadtest can be uplaoded to a go-lo agent, with a schedule, and you should see results.
 
 
 
 
 ## <a name="pkg-index">Index</a>
 * [Constants](#pkg-constants)
-* [func DoRequest(id string, req *http.Request) (response *http.Response)](#DoRequest)
 * [func NewSequenceID() string](#NewSequenceID)
-* [func Start(server Server) (err error)](#Start)
-* [type HTTPClient](#HTTPClient)
-* [type NullArg](#NullArg)
-* [type Output](#Output)
-  * [func Parse(id string, duration time.Duration, r *http.Request, resp *http.Response) (o Output)](#Parse)
-  * [func (o Output) String() string](#Output.String)
-* [type Runner](#Runner)
-* [type Server](#Server)
-  * [func New(r Runner) Server](#New)
-  * [func (s Server) Run(_ *NullArg, _ *NullArg) error](#Server.Run)
+* [func RegisterJobServer(s *grpc.Server, srv JobServer)](#RegisterJobServer)
+* [type Context](#Context)
+  * [func (*Context) Descriptor() ([]byte, []int)](#Context.Descriptor)
+  * [func (m *Context) GetJobName() string](#Context.GetJobName)
+  * [func (*Context) ProtoMessage()](#Context.ProtoMessage)
+  * [func (m *Context) Reset()](#Context.Reset)
+  * [func (m *Context) String() string](#Context.String)
+  * [func (m *Context) XXX_DiscardUnknown()](#Context.XXX_DiscardUnknown)
+  * [func (m *Context) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)](#Context.XXX_Marshal)
+  * [func (m *Context) XXX_Merge(src proto.Message)](#Context.XXX_Merge)
+  * [func (m *Context) XXX_Size() int](#Context.XXX_Size)
+  * [func (m *Context) XXX_Unmarshal(b []byte) error](#Context.XXX_Unmarshal)
+* [type JobClient](#JobClient)
+  * [func NewJobClient(cc *grpc.ClientConn) JobClient](#NewJobClient)
+* [type JobServer](#JobServer)
+* [type Loadtest](#Loadtest)
+  * [func New(f TriggerFunc) (l Loadtest, err error)](#New)
+  * [func (l Loadtest) Start() (err error)](#Loadtest.Start)
+  * [func (l Loadtest) Trigger(ctx context.Context, c *Context) (r *Response, err error)](#Loadtest.Trigger)
+* [type Response](#Response)
+  * [func (*Response) Descriptor() ([]byte, []int)](#Response.Descriptor)
+  * [func (m *Response) GetError() bool](#Response.GetError)
+  * [func (m *Response) GetId() string](#Response.GetId)
+  * [func (m *Response) GetJobName() string](#Response.GetJobName)
+  * [func (m *Response) GetOutput() string](#Response.GetOutput)
+  * [func (m *Response) GetTags() []*ResponseTag](#Response.GetTags)
+  * [func (*Response) ProtoMessage()](#Response.ProtoMessage)
+  * [func (m *Response) Reset()](#Response.Reset)
+  * [func (m *Response) String() string](#Response.String)
+  * [func (m *Response) XXX_DiscardUnknown()](#Response.XXX_DiscardUnknown)
+  * [func (m *Response) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)](#Response.XXX_Marshal)
+  * [func (m *Response) XXX_Merge(src proto.Message)](#Response.XXX_Merge)
+  * [func (m *Response) XXX_Size() int](#Response.XXX_Size)
+  * [func (m *Response) XXX_Unmarshal(b []byte) error](#Response.XXX_Unmarshal)
+* [type ResponseTag](#ResponseTag)
+  * [func Tagify(m map[string]interface{}) (tags []*ResponseTag)](#Tagify)
+  * [func (*ResponseTag) Descriptor() ([]byte, []int)](#ResponseTag.Descriptor)
+  * [func (m *ResponseTag) GetKey() string](#ResponseTag.GetKey)
+  * [func (m *ResponseTag) GetValue() string](#ResponseTag.GetValue)
+  * [func (*ResponseTag) ProtoMessage()](#ResponseTag.ProtoMessage)
+  * [func (m *ResponseTag) Reset()](#ResponseTag.Reset)
+  * [func (m *ResponseTag) String() string](#ResponseTag.String)
+  * [func (m *ResponseTag) XXX_DiscardUnknown()](#ResponseTag.XXX_DiscardUnknown)
+  * [func (m *ResponseTag) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)](#ResponseTag.XXX_Marshal)
+  * [func (m *ResponseTag) XXX_Merge(src proto.Message)](#ResponseTag.XXX_Merge)
+  * [func (m *ResponseTag) XXX_Size() int](#ResponseTag.XXX_Size)
+  * [func (m *ResponseTag) XXX_Unmarshal(b []byte) error](#ResponseTag.XXX_Unmarshal)
+* [type TriggerFunc](#TriggerFunc)
+* [type UnimplementedJobServer](#UnimplementedJobServer)
+  * [func (*UnimplementedJobServer) Trigger(ctx context.Context, req *Context) (*Response, error)](#UnimplementedJobServer.Trigger)
 
 
 #### <a name="pkg-files">Package files</a>
-[clock.go](/src/github.com/go-lo/go-lo/clock.go) [doc.go](/src/github.com/go-lo/go-lo/doc.go) [interface.go](/src/github.com/go-lo/go-lo/interface.go) [logging.go](/src/github.com/go-lo/go-lo/logging.go) [output.go](/src/github.com/go-lo/go-lo/output.go) [request.go](/src/github.com/go-lo/go-lo/request.go) 
+[doc.go](/src/github.com/go-lo/go-lo/doc.go) [go-lo.pb.go](/src/github.com/go-lo/go-lo/go-lo.pb.go) [interface.go](/src/github.com/go-lo/go-lo/interface.go) [sequences.go](/src/github.com/go-lo/go-lo/sequences.go) [tags.go](/src/github.com/go-lo/go-lo/tags.go) 
 
 
 ## <a name="pkg-constants">Constants</a>
@@ -123,21 +154,7 @@ const (
 
 
 
-## <a name="DoRequest">func</a> [DoRequest](/src/target/request.go?s=1681:1751#L51)
-``` go
-func DoRequest(id string, req *http.Request) (response *http.Response)
-```
-DoRequest will take an ID and an http.Request, turn it into
-an Output, and print that to STDOUT with all of the pieces taken
-care of. The purpose of this is to capture additional information,
-such as duration and Sequence IDs.
-Rather than pushing the responsibility of outputting this data to the
-writer of a schedule, this function removes that boilerplate by
-doing it its self.
-
-
-
-## <a name="NewSequenceID">func</a> [NewSequenceID](/src/target/request.go?s=2567:2594#L90)
+## <a name="NewSequenceID">func</a> [NewSequenceID](/src/target/sequences.go?s=757:784#L21)
 ``` go
 func NewSequenceID() string
 ```
@@ -149,89 +166,133 @@ Thus: a usable ID can always be guaranteed from this function
 
 
 
-## <a name="Start">func</a> [Start](/src/target/interface.go?s=1643:1680#L76)
+## <a name="RegisterJobServer">func</a> [RegisterJobServer](/src/target/go-lo.pb.go?s=8448:8501#L256)
 ``` go
-func Start(server Server) (err error)
+func RegisterJobServer(s *grpc.Server, srv JobServer)
 ```
-Start will start an RPC server on loadtest.RPCAddr
-and register Server ahead of Agents scheduling jobs
 
 
 
-
-## <a name="HTTPClient">type</a> [HTTPClient](/src/target/request.go?s=259:388#L15)
+## <a name="Context">type</a> [Context](/src/target/go-lo.pb.go?s=745:995#L27)
 ``` go
-type HTTPClient interface {
-    // Do tracks https://golang.org/pkg/net/http/#Client.Do
-    Do(*http.Request) (*http.Response, error)
+type Context struct {
+    JobName              string   `protobuf:"bytes,1,opt,name=jobName,proto3" json:"jobName,omitempty"`
+    XXX_NoUnkeyedLiteral struct{} `json:"-"`
+    XXX_unrecognized     []byte   `json:"-"`
+    XXX_sizecache        int32    `json:"-"`
+}
+
+```
+
+
+
+
+
+
+
+
+
+### <a name="Context.Descriptor">func</a> (\*Context) [Descriptor](/src/target/go-lo.pb.go?s=1159:1203#L37)
+``` go
+func (*Context) Descriptor() ([]byte, []int)
+```
+
+
+
+### <a name="Context.GetJobName">func</a> (\*Context) [GetJobName](/src/target/go-lo.pb.go?s=1809:1846#L59)
+``` go
+func (m *Context) GetJobName() string
+```
+
+
+
+### <a name="Context.ProtoMessage">func</a> (\*Context) [ProtoMessage](/src/target/go-lo.pb.go?s=1122:1152#L36)
+``` go
+func (*Context) ProtoMessage()
+```
+
+
+
+### <a name="Context.Reset">func</a> (\*Context) [Reset](/src/target/go-lo.pb.go?s=997:1022#L34)
+``` go
+func (m *Context) Reset()
+```
+
+
+
+### <a name="Context.String">func</a> (\*Context) [String](/src/target/go-lo.pb.go?s=1050:1083#L35)
+``` go
+func (m *Context) String() string
+```
+
+
+
+### <a name="Context.XXX_DiscardUnknown">func</a> (\*Context) [XXX_DiscardUnknown](/src/target/go-lo.pb.go?s=1667:1705#L53)
+``` go
+func (m *Context) XXX_DiscardUnknown()
+```
+
+
+
+### <a name="Context.XXX_Marshal">func</a> (\*Context) [XXX_Marshal](/src/target/go-lo.pb.go?s=1359:1434#L44)
+``` go
+func (m *Context) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)
+```
+
+
+
+### <a name="Context.XXX_Merge">func</a> (\*Context) [XXX_Merge](/src/target/go-lo.pb.go?s=1500:1546#L47)
+``` go
+func (m *Context) XXX_Merge(src proto.Message)
+```
+
+
+
+### <a name="Context.XXX_Size">func</a> (\*Context) [XXX_Size](/src/target/go-lo.pb.go?s=1590:1622#L50)
+``` go
+func (m *Context) XXX_Size() int
+```
+
+
+
+### <a name="Context.XXX_Unmarshal">func</a> (\*Context) [XXX_Unmarshal](/src/target/go-lo.pb.go?s=1259:1306#L41)
+``` go
+func (m *Context) XXX_Unmarshal(b []byte) error
+```
+
+
+
+## <a name="JobClient">type</a> [JobClient](/src/target/go-lo.pb.go?s=7515:7630#L222)
+``` go
+type JobClient interface {
+    Trigger(ctx context.Context, in *Context, opts ...grpc.CallOption) (*Response, error)
 }
 ```
-HTTPClient is an interface which exposes a simple
-way of doing http calls. It can be overwritten for
-Oauth, or other auth, or even to stub calls out in
-testing
+JobClient is the client API for Job service.
+
+For semantics around ctx use and closing/ending streaming RPCs, please refer to <a href="https://godoc.org/google.golang.org/grpc#ClientConn.NewStream">https://godoc.org/google.golang.org/grpc#ClientConn.NewStream</a>.
 
 
+
+
+
+
+
+### <a name="NewJobClient">func</a> [NewJobClient](/src/target/go-lo.pb.go?s=7680:7728#L230)
 ``` go
-var (
-    // Client can be overridden for when extra control
-    // is warranted, such as with authorization, or
-    // overriding TLS configuration
-    Client HTTPClient
-
-    // CloseRequests will ensure all requests are closed
-    // as early as possible, as if Keep Alive is disabled.
-    // This defaults to true to:
-    //  1. Ensure connections don't hang around slupring resources, and
-    //  2. Because keep alive isn't necessarily a great way to prove the
-    //     performance of an endpoint
-    CloseRequests = true
-)
+func NewJobClient(cc *grpc.ClientConn) JobClient
 ```
 
 
 
 
-
-
-
-
-
-## <a name="NullArg">type</a> [NullArg](/src/target/interface.go?s=299:320#L18)
+## <a name="JobServer">type</a> [JobServer](/src/target/go-lo.pb.go?s=8057:8140#L244)
 ``` go
-type NullArg struct{}
-```
-NullArg is a set of args that don't do anything
-but that can be put into rpc calls to aid readability
-
-
-
-
-
-
-
-
-
-
-## <a name="Output">type</a> [Output](/src/target/output.go?s=338:699#L19)
-``` go
-type Output struct {
-    SequenceID string        `json:"sequenceID"`
-    URL        string        `json:"url"`
-    Method     string        `json:"method"`
-    Status     int           `json:"status"`
-    Size       int64         `json:"size"`
-    Timestamp  time.Time     `json:"timestamp"`
-    Duration   time.Duration `json:"duration"`
-    Error      interface{}   `json:"error"`
+type JobServer interface {
+    Trigger(context.Context, *Context) (*Response, error)
 }
 ```
-Output is a normalised, enriched struct containing
-results for a response which can be printed and picked
-up by a loadtest agent.
-
-This has a number of convenience functions hanging
-off the back of it to remove boilerplate in schedule code
+JobServer is the server API for Job service.
 
 
 
@@ -239,56 +300,18 @@ off the back of it to remove boilerplate in schedule code
 
 
 
-### <a name="Parse">func</a> [Parse](/src/target/output.go?s=902:996#L34)
+
+
+
+## <a name="Loadtest">type</a> [Loadtest](/src/target/interface.go?s=490:557#L24)
 ``` go
-func Parse(id string, duration time.Duration, r *http.Request, resp *http.Response) (o Output)
-```
-Parse takes a sequence ID, duration, and an http.Response
-and pulls out the necessary data an Output type wants
-The sequence ID is useful to be able to group requests
-in a journey together
-
-
-
-
-
-### <a name="Output.String">func</a> (Output) [String](/src/target/output.go?s=1317:1348#L53)
-``` go
-func (o Output) String() string
-```
-String outputs a marshal'd json string for the attached
-Output. It swallows errors.
-
-
-
-
-## <a name="Runner">type</a> [Runner](/src/target/interface.go?s=471:503#L23)
-``` go
-type Runner interface {
-    Run()
-}
-```
-Runner is the interface to implement in scheduler
-code; it provides a single function `Run()` which
-takes no arguments, and returns nothing
-
-
-
-
-
-
-
-
-
-
-## <a name="Server">type</a> [Server](/src/target/interface.go?s=587:624#L29)
-``` go
-type Server struct {
+type Loadtest struct {
     // contains filtered or unexported fields
 }
+
 ```
-Server will expose scheduler code over RPC for agents
-to run and work with.
+Loadtest holds configuration and gRPC contexts which Loadtests
+must be wrapped in
 
 
 
@@ -296,9 +319,9 @@ to run and work with.
 
 
 
-### <a name="New">func</a> [New](/src/target/interface.go?s=848:873#L37)
+### <a name="New">func</a> [New](/src/target/interface.go?s=781:828#L33)
 ``` go
-func New(r Runner) Server
+func New(f TriggerFunc) (l Loadtest, err error)
 ```
 New takes scheduler code which implements the Runner
 interface and returns a Server. It also runs some bootstrap
@@ -309,12 +332,290 @@ ought to, like a clock and an HTTPClient
 
 
 
-### <a name="Server.Run">func</a> (Server) [Run](/src/target/interface.go?s=1361:1410#L61)
+### <a name="Loadtest.Start">func</a> (Loadtest) [Start](/src/target/interface.go?s=1046:1083#L46)
 ``` go
-func (s Server) Run(_ *NullArg, _ *NullArg) error
+func (l Loadtest) Start() (err error)
 ```
-Run is the RPC interface into scheduler code
+Start will start an RPC server on loadtest.RPCAddr
+and register Server ahead of Agents scheduling jobs
 
+
+
+
+### <a name="Loadtest.Trigger">func</a> (Loadtest) [Trigger](/src/target/interface.go?s=1311:1394#L60)
+``` go
+func (l Loadtest) Trigger(ctx context.Context, c *Context) (r *Response, err error)
+```
+Trigger creates contexts/ outputs, and passes them to
+(Loadtest).trigger() to run a test
+
+
+
+
+## <a name="Response">type</a> [Response](/src/target/go-lo.pb.go?s=3299:3981#L113)
+``` go
+type Response struct {
+    Id                   string         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+    JobName              string         `protobuf:"bytes,2,opt,name=jobName,proto3" json:"jobName,omitempty"`
+    Error                bool           `protobuf:"varint,3,opt,name=error,proto3" json:"error,omitempty"`
+    Output               string         `protobuf:"bytes,4,opt,name=output,proto3" json:"output,omitempty"`
+    Tags                 []*ResponseTag `protobuf:"bytes,5,rep,name=tags,proto3" json:"tags,omitempty"`
+    XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+    XXX_unrecognized     []byte         `json:"-"`
+    XXX_sizecache        int32          `json:"-"`
+}
+
+```
+
+
+
+
+
+
+
+
+
+### <a name="Response.Descriptor">func</a> (\*Response) [Descriptor](/src/target/go-lo.pb.go?s=4149:4194#L127)
+``` go
+func (*Response) Descriptor() ([]byte, []int)
+```
+
+
+
+### <a name="Response.GetError">func</a> (\*Response) [GetError](/src/target/go-lo.pb.go?s=4985:5019#L163)
+``` go
+func (m *Response) GetError() bool
+```
+
+
+
+### <a name="Response.GetId">func</a> (\*Response) [GetId](/src/target/go-lo.pb.go?s=4811:4844#L149)
+``` go
+func (m *Response) GetId() string
+```
+
+
+
+### <a name="Response.GetJobName">func</a> (\*Response) [GetJobName](/src/target/go-lo.pb.go?s=4893:4931#L156)
+``` go
+func (m *Response) GetJobName() string
+```
+
+
+
+### <a name="Response.GetOutput">func</a> (\*Response) [GetOutput](/src/target/go-lo.pb.go?s=5074:5111#L170)
+``` go
+func (m *Response) GetOutput() string
+```
+
+
+
+### <a name="Response.GetTags">func</a> (\*Response) [GetTags](/src/target/go-lo.pb.go?s=5164:5207#L177)
+``` go
+func (m *Response) GetTags() []*ResponseTag
+```
+
+
+
+### <a name="Response.ProtoMessage">func</a> (\*Response) [ProtoMessage](/src/target/go-lo.pb.go?s=4111:4142#L126)
+``` go
+func (*Response) ProtoMessage()
+```
+
+
+
+### <a name="Response.Reset">func</a> (\*Response) [Reset](/src/target/go-lo.pb.go?s=3983:4009#L124)
+``` go
+func (m *Response) Reset()
+```
+
+
+
+### <a name="Response.String">func</a> (\*Response) [String](/src/target/go-lo.pb.go?s=4038:4072#L125)
+``` go
+func (m *Response) String() string
+```
+
+
+
+### <a name="Response.XXX_DiscardUnknown">func</a> (\*Response) [XXX_DiscardUnknown](/src/target/go-lo.pb.go?s=4666:4705#L143)
+``` go
+func (m *Response) XXX_DiscardUnknown()
+```
+
+
+
+### <a name="Response.XXX_Marshal">func</a> (\*Response) [XXX_Marshal](/src/target/go-lo.pb.go?s=4352:4428#L134)
+``` go
+func (m *Response) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)
+```
+
+
+
+### <a name="Response.XXX_Merge">func</a> (\*Response) [XXX_Merge](/src/target/go-lo.pb.go?s=4495:4542#L137)
+``` go
+func (m *Response) XXX_Merge(src proto.Message)
+```
+
+
+
+### <a name="Response.XXX_Size">func</a> (\*Response) [XXX_Size](/src/target/go-lo.pb.go?s=4587:4620#L140)
+``` go
+func (m *Response) XXX_Size() int
+```
+
+
+
+### <a name="Response.XXX_Unmarshal">func</a> (\*Response) [XXX_Unmarshal](/src/target/go-lo.pb.go?s=4250:4298#L131)
+``` go
+func (m *Response) XXX_Unmarshal(b []byte) error
+```
+
+
+
+## <a name="ResponseTag">type</a> [ResponseTag](/src/target/go-lo.pb.go?s=1900:2243#L66)
+``` go
+type ResponseTag struct {
+    Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+    Value                string   `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+    XXX_NoUnkeyedLiteral struct{} `json:"-"`
+    XXX_unrecognized     []byte   `json:"-"`
+    XXX_sizecache        int32    `json:"-"`
+}
+
+```
+
+
+
+
+
+
+### <a name="Tagify">func</a> [Tagify](/src/target/tags.go?s=138:197#L9)
+``` go
+func Tagify(m map[string]interface{}) (tags []*ResponseTag)
+```
+Tagify takes a map of strings to interfaces, and
+turns it into tags which can be used in Responses
+
+
+
+
+
+### <a name="ResponseTag.Descriptor">func</a> (\*ResponseTag) [Descriptor](/src/target/go-lo.pb.go?s=2423:2471#L77)
+``` go
+func (*ResponseTag) Descriptor() ([]byte, []int)
+```
+
+
+
+### <a name="ResponseTag.GetKey">func</a> (\*ResponseTag) [GetKey](/src/target/go-lo.pb.go?s=3121:3158#L99)
+``` go
+func (m *ResponseTag) GetKey() string
+```
+
+
+
+### <a name="ResponseTag.GetValue">func</a> (\*ResponseTag) [GetValue](/src/target/go-lo.pb.go?s=3208:3247#L106)
+``` go
+func (m *ResponseTag) GetValue() string
+```
+
+
+
+### <a name="ResponseTag.ProtoMessage">func</a> (\*ResponseTag) [ProtoMessage](/src/target/go-lo.pb.go?s=2382:2416#L76)
+``` go
+func (*ResponseTag) ProtoMessage()
+```
+
+
+
+### <a name="ResponseTag.Reset">func</a> (\*ResponseTag) [Reset](/src/target/go-lo.pb.go?s=2245:2274#L74)
+``` go
+func (m *ResponseTag) Reset()
+```
+
+
+
+### <a name="ResponseTag.String">func</a> (\*ResponseTag) [String](/src/target/go-lo.pb.go?s=2306:2343#L75)
+``` go
+func (m *ResponseTag) String() string
+```
+
+
+
+### <a name="ResponseTag.XXX_DiscardUnknown">func</a> (\*ResponseTag) [XXX_DiscardUnknown](/src/target/go-lo.pb.go?s=2967:3009#L93)
+``` go
+func (m *ResponseTag) XXX_DiscardUnknown()
+```
+
+
+
+### <a name="ResponseTag.XXX_Marshal">func</a> (\*ResponseTag) [XXX_Marshal](/src/target/go-lo.pb.go?s=2635:2714#L84)
+``` go
+func (m *ResponseTag) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)
+```
+
+
+
+### <a name="ResponseTag.XXX_Merge">func</a> (\*ResponseTag) [XXX_Merge](/src/target/go-lo.pb.go?s=2784:2834#L87)
+``` go
+func (m *ResponseTag) XXX_Merge(src proto.Message)
+```
+
+
+
+### <a name="ResponseTag.XXX_Size">func</a> (\*ResponseTag) [XXX_Size](/src/target/go-lo.pb.go?s=2882:2918#L90)
+``` go
+func (m *ResponseTag) XXX_Size() int
+```
+
+
+
+### <a name="ResponseTag.XXX_Unmarshal">func</a> (\*ResponseTag) [XXX_Unmarshal](/src/target/go-lo.pb.go?s=2527:2578#L81)
+``` go
+func (m *ResponseTag) XXX_Unmarshal(b []byte) error
+```
+
+
+
+## <a name="TriggerFunc">type</a> [TriggerFunc](/src/target/interface.go?s=339:400#L20)
+``` go
+type TriggerFunc func(*Context, *Response) (*Response, error)
+```
+TriggerFunc is a function which a loadtest calls. All
+loadtests have to do is implement this function in a go
+application.
+
+
+
+
+
+
+
+
+
+
+## <a name="UnimplementedJobServer">type</a> [UnimplementedJobServer](/src/target/go-lo.pb.go?s=8228:8266#L249)
+``` go
+type UnimplementedJobServer struct {
+}
+
+```
+UnimplementedJobServer can be embedded to have forward compatible implementations.
+
+
+
+
+
+
+
+
+
+
+### <a name="UnimplementedJobServer.Trigger">func</a> (\*UnimplementedJobServer) [Trigger](/src/target/go-lo.pb.go?s=8268:8360#L252)
+``` go
+func (*UnimplementedJobServer) Trigger(ctx context.Context, req *Context) (*Response, error)
+```
 
 
 
