@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package golo;
+
+// Job services are exposed by Jobs. These Jobs
+// receive a trigger, of some sort, run and then
+// return a set of data denoting a test run
+service Job {
+  rpc Trigger(Context) returns (Response) {}
+}
+
+message Context {
+  string jobName = 1;
+}
+
+message ResponseTag {
+  string key = 1;
+  string value = 1;
+}
+
+message Response {
+  string id = 1;
+  bool error = 2;
+  string output = 3;
+  repeated ResponseTag tags = 4;
+}
