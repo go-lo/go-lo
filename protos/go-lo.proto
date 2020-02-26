@@ -22,7 +22,7 @@ message Response {
   string id = 1;
   string jobName = 2;
   bool error = 3;
-  uint32 duration = 4;
-  string output = 4;
-  repeated ResponseTag tags = 5;
+  uint64 duration = 4;
+  string output = 5;
+  repeated ResponseTag tags = 6;
 }

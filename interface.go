@@ -65,7 +65,7 @@ func (l Loadtest) Trigger(ctx context.Context, c *Context) (r *Response, err err
 
 	start := time.Now()
 	r, err = l.trigger(c, r)
-	r.Duration = time.Now().Sub(start)
+	r.Duration = uint64(time.Now().Sub(start))
 
 	return
 }
