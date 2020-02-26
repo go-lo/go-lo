@@ -1,7 +1,7 @@
 default: test
 
 .PHONY: test
-test: deps
+test:
 	go test -v -covermode=count -coverprofile="./count.out" ./...
 
 README.md:
